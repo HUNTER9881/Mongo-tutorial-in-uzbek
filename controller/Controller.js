@@ -1,5 +1,5 @@
 const { UserModel } = require('../model/Model')
-
+const mongoose = require('mongoose')
 exports.Comparision_Recursion = async (req, res, next) => {
     const ARRAY = []
     const recursion = (count) => {
@@ -48,13 +48,10 @@ exports.Comparision_Recursion = async (req, res, next) => {
     recursion(100)
     res.json(ARRAY)
 }
-
-
-
 // Comparision query operator - Taqqoslash opeartorlari
 exports.Comparision_Filter = async (req, res, next) => {
     // 1. == - $eq
-    const equal = { code: { $eq: 98 } }
+    const equal = { code: { $exists: true, $eq: 98 } }
     // UserModel.filter((item) => { item.code == 98 })
 
     // 2. != - $ne
@@ -85,15 +82,12 @@ exports.Comparision_Filter = async (req, res, next) => {
     const notEqualInArray = { tag: { $nin: ["AB", "BD"] } }
     // UserModel.filter((item) => { item.code != [...] })
 
-    const responseData = await UserModel.find(notEqualInArray)
+    const responseData = await UserModel.find(equal)
     res.json({
         soni: responseData.length,
         malumot: responseData
     })
 }
-
-
-
 // Logical query operator - Mantiqiy opeartorlari
 exports.Logical_Filter = async (req, res, next) => {
 
@@ -126,9 +120,6 @@ exports.Logical_Filter = async (req, res, next) => {
             { ball: { $gt: 100 } },
         ]
     }
-
-
-
     /*
         UserModel.filter((item) => {
             (item.code > 10 && item.code < 20) && (item.ball > 100 && item.ball < 200)
@@ -150,12 +141,6 @@ exports.Logical_Filter = async (req, res, next) => {
             },
         ]
     }
-
-
-
-
-
-
     /*
        UserModel.filter((item) => {
            ((item.code > 30 && item.code < 40) && (item.ball > 300 && item.ball < 400)) &&
@@ -205,4 +190,165 @@ exports.Logical_Filter = async (req, res, next) => {
         soni: responseData.length,
         malumot: responseData
     })
+}
+exports.ElementQuery = async (req, res, next) => {
+    const responseData = await UserModel.find({ name: { $type: "string" } })
+    res.json({
+        soni: responseData.length,
+        malumot: responseData
+    })
+}
+exports.Aggrgeate = async (req, res, next) => {
+    // 1. $match - .find()
+    // await UserModel.find({ $and: [{ uuid: { $gt: 10000 } }, { uuid: { $lt: 60000 } }] })
+    // const result = await UserModel.aggregate([
+    //     {
+    //         $match: {
+    //             $and: [
+    //                 { uuid: { $gt: 10000 } },
+    //                 { uuid: { $lt: 60000 } }
+    //             ]
+    //         }
+    //     },
+    // ])
+
+
+
+
+
+    // 2. $match - .findById()
+    // await UserModel.findById(_id: req.params.id)
+    // const result = await UserModel.aggregate([
+    //     {
+    //         $match: {
+    //             _id: mongoose.Types.ObjectId(req.params.id)
+    //         }
+    //     },
+    // ])
+
+
+
+
+
+    // 2. .findById() + select
+    // await UserModel.findById(_id: req.params.id).select({name: 1})
+    // const result = await UserModel.aggregate(
+    //     [
+    //         {
+    //             $match: {
+    //                 _id: mongoose.Types.ObjectId(req.params.id)
+    //             }
+    //         },
+    //         {
+    //             $project: {
+    //                 tag: 0
+    //             }
+    //         },
+    //     ]
+    // )
+
+
+    const result = await UserModel.aggregate(
+        [
+            {
+                $match: {}
+            },
+            {
+                $set: {
+                    // $multiply - ko'paytrirsh
+                    // $add - qo'shish belgisi
+                    // $subtract - ayirish belgisi
+                    // $divide - bo'lish belgisi
+                    // $mod - qoldiq belgisi
+
+                    // code + ball + uuid
+                    total: { $add: ["$code", "$ball", "$uuid"] },
+
+                    // ball - code
+                    // $subtract - ayirish belgisi
+                    ayirish: { $subtract: ["$ball", "$code"] },
+
+                    // (ball - code) + 1000
+                    ayirish_1: { $add: [{ $subtract: ["$ball", "$code"] }, 1000] },
+
+                    // 100 + 200 / 5 * 3 = 220
+                    complex: {
+                        $add: [100, { $multiply: [3, { $divide: [200, 5] }] }]
+                    },
+
+                    // Math.floor((100 * (20 / 38 + 12) + (59 / 100) % "$code"))
+                    demo: {
+                        $floor: {
+                            $mod: [
+                                //  1253.2215789473685
+                                {
+                                    $add: [
+                                        {
+                                            $multiply: [
+                                                100,
+                                                {
+                                                    $add: [
+                                                        12,
+                                                        {
+                                                            $divide: [20, 38]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            $divide: [59, 100]
+                                        }
+                                    ]
+                                },
+                                "$code"
+                            ]
+                        }
+
+
+                    },
+
+
+                    qoldiq: {
+                        $mod: [
+                            100,
+                            {
+                                $add: [3233.898, 1]
+                            }
+                        ]
+                    }
+
+                }
+            },
+            {
+                $project: {
+                    total: 1,
+                    ayirish: 1,
+                    ayirish_1: 1,
+                    complex: 1,
+                    demo: 1,
+                    code: 1,
+                    uuid: 1,
+                    ball: 1,
+                    qoldiq: 1
+                }
+            },
+        ]
+    )
+
+
+
+
+    res.json({
+        soni: result.length,
+        result
+    })
+
+
+
+
+
+
+
+
 }
