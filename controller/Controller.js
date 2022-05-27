@@ -36,6 +36,7 @@ exports.Comparision_Recursion = async (req, res, next) => {
                 ball: randomNumber(1000),
                 uuid: randomNumber(1000000),
                 tag: [randomTag(2), randomTag(2), randomTag(2), randomTag(2)],
+                hometask: [randomNumber(100), randomNumber(100), randomNumber(100), randomNumber(100)]
             })
             user.save()
 
@@ -45,7 +46,7 @@ exports.Comparision_Recursion = async (req, res, next) => {
         }
 
     }
-    recursion(100)
+    recursion(30)
     res.json(ARRAY)
 }
 // Comparision query operator - Taqqoslash opeartorlari
@@ -82,7 +83,7 @@ exports.Comparision_Filter = async (req, res, next) => {
     const notEqualInArray = { tag: { $nin: ["AB", "BD"] } }
     // UserModel.filter((item) => { item.code != [...] })
 
-    const responseData = await UserModel.find(equal)
+    const responseData = await UserModel.find(littleThan)
     res.json({
         soni: responseData.length,
         malumot: responseData
@@ -198,7 +199,7 @@ exports.ElementQuery = async (req, res, next) => {
         malumot: responseData
     })
 }
-exports.Aggrgeate = async (req, res, next) => {
+exports.Aggregeate = async (req, res, next) => {
     // 1. $match - .find()
     // await UserModel.find({ $and: [{ uuid: { $gt: 10000 } }, { uuid: { $lt: 60000 } }] })
     // const result = await UserModel.aggregate([
@@ -232,7 +233,7 @@ exports.Aggrgeate = async (req, res, next) => {
 
     // 2. .findById() + select
     // await UserModel.findById(_id: req.params.id).select({name: 1})
-    // const result = await UserModel.aggregate(
+    // const result22 = await UserModel.aggregate(
     //     [
     //         {
     //             $match: {
@@ -245,7 +246,7 @@ exports.Aggrgeate = async (req, res, next) => {
     //             }
     //         },
     //     ]
-    // )
+    // ),
 
 
     const result = await UserModel.aggregate(
@@ -301,11 +302,9 @@ exports.Aggrgeate = async (req, res, next) => {
                                         }
                                     ]
                                 },
-                                "$code"
+                                80
                             ]
                         }
-
-
                     },
 
 
@@ -313,7 +312,7 @@ exports.Aggrgeate = async (req, res, next) => {
                         $mod: [
                             100,
                             {
-                                $add: [3233.898, 1]
+                                $add: [32, 1]
                             }
                         ]
                     }
@@ -351,4 +350,171 @@ exports.Aggrgeate = async (req, res, next) => {
 
 
 
+}
+exports.addField = async (req, res, next) => {
+    // await UserModel.find().countDocuments()
+    // await UserModel.find().count()
+
+    const user = await UserModel.aggregate([
+        {
+            $match: {}
+        },
+        {
+            $addFields: {
+                username: "John Kerry",
+                total: {
+                    $add: ["$code", "$ball"]
+                },
+                natija: {
+                    $sum: "$hometask"
+                },
+                username: {
+                    name: "Shahriyor",
+                    email: "nodemon@mail.ru",
+                    age: 24,
+                    ball: 190,
+
+                }
+
+            }
+        },
+        {
+            $addFields: {
+                "username.TOTAL": {
+                    $add: ["$username.age", "$username.ball"]
+                },
+                usernameConcat: {
+                    $concatArrays: [
+                        "$hometask",
+                        [{ $add: ["$total", "$natija"] }]
+                    ]
+                }
+            }
+        },
+        {
+            $count: "UMUMIY"
+        }
+
+
+    ])
+
+    res.json(user)
+}
+
+exports.unwind = async (req, res, next) => {
+    const user = await UserModel.aggregate([
+        {
+            $match: {}
+        },
+        {
+            $unwind: "$tag"
+        }
+    ])
+    res.json(user)
+}
+
+
+exports.unset = async (req, res, next) => {
+    const user = await UserModel.aggregate(
+        [
+            {
+                $match: {}
+            },
+            {
+                $unset: ["tag", "name", "hometask", "code", "ball"]
+            }
+        ])
+    res.json(user)
+}
+
+exports.sortElement = async (req, res, next) => {
+    const user = await UserModel.aggregate(
+        [
+            {
+                $project: {
+                    uuid: 1
+                }
+            },
+            {
+                $sort: {
+                    uuid: 1
+                }
+            },
+
+        ]
+    )
+    res.json(user)
+}
+
+exports.skipElement = async (req, res, next) => {
+    const user = await UserModel.aggregate(
+        [
+            // {
+            //     $project: {
+            //         uuid: 1,
+            //         name: 1
+            //     }
+            // },
+            {
+                $sort: {
+                    uuid: 1
+                }
+            },
+            {
+                $skip: 3
+            },
+            {
+                $limit: 3
+            }
+
+
+        ]
+    )
+    res.json(user)
+}
+
+exports.sample = async (req, res, next) => {
+    const user = await UserModel.aggregate(
+        [
+            {
+                $project: {
+                    uuid: 1,
+                    name: 1
+                }
+            },
+            { $sample: { size: 3 } }
+        ]
+    )
+    res.json(user)
+}
+exports.replaceWith = async (req, res, next) => {
+    const user = await UserModel.aggregate(
+        [
+            {
+                $replaceWith: {
+                    _id: "$_id",
+                    tag: {
+                        name: "a"
+                    }
+                }
+            }
+        ]
+    )
+    res.json(user)
+}
+
+
+exports.all = async (re, res, next) => {
+    const document = await UserModel.aggregate (
+        [
+            {
+                $match: {}
+            }
+            
+        ]
+    )
+    res.json({
+        soni : document.length,
+        document
+    })
 }

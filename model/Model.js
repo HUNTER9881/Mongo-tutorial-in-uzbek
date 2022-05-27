@@ -5,9 +5,8 @@ const UserSchema = mongoose.Schema({
     ball: { type: Number, required: true },
     uuid: { type: Number, required: true },
     tag: [{ type: String, required: true }],
-}, { timestamps: true })
-
-
+    hometask:[ {type: Number, required: true}]
+}, { timestamps: true });
 
 
 const UserModel = mongoose.model('user', UserSchema)

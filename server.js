@@ -11,6 +11,7 @@ connection()
 
 
 app.use('/api', require('./router/Router'))
+app.use('/aggregate', require('./router/Aggregate'))
 
 
 
